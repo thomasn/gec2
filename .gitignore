@@ -1,4 +1,4 @@
 *~
 .DS_Store
-env.rb
-boot.erb
+env.yml
+tmp
