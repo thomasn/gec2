@@ -159,14 +159,14 @@ ssl=yes					# use ssl-support.  Works with
 # myhost.namecheap.com
 
 ### vvv ###
-login=<%= dyndns_login %>
-password=<%= dyndns_password %>
+login=<%= login %>
+password=<%= password %>
 use=web,                   \
 web=http://169.254.169.254/2008-02-01/meta-data/public-ipv4
 custom=yes,                \
 wildcard=yes,              \
 server=members.dyndns.org, \
 protocol=dyndns2           \
-<%= dyndns_hostname %>
+<%= name %>
 ### ^^^ ###
 
