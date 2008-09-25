@@ -1,7 +1,8 @@
 # Copyright 2008 Tim Dysinger
 # http://www.opensource.org/licenses/mit-license.php
 
-%w(rubygems open-uri ostruct hpricot erb aws/s3 EC2 facter yaml).each do |l|
+%w(rubygems open-uri ostruct delegate
+   hpricot erb aws/s3 EC2 facter yaml pp).each do |l|
   require(l)
 end
 
@@ -10,19 +11,20 @@ end
 ######################################################################
 
 class OpenStruct
+  class << self ; public(:binding) end
+  def binding ; super end
   def merge(other) ; OpenStruct.new(@table.merge(other.to_hash)) end
   def merge!(other) ; @table.merge!(other.to_hash) ; self end
   def to_hash ; @table.dup end
+  def to_yaml ; YAML.dump(@table) end
 end
-
 @env = OpenStruct.new
-def method_missing(m) ; @env.send(m) end
 
 ######################################################################
 # Image
 ######################################################################
 
-desc('bootstrap, configure, bundle and upload')
+desc('build an image')
 task(:image => :upload)
 
 def chroot(*a)
@@ -58,7 +60,7 @@ file_create('/mnt/gentoo' => '/tmp/stage3-2008.0.tar.bz2') do
   cp('/etc/resolv.conf', '/mnt/gentoo/etc')
   File.open('/mnt/gentoo/etc/make.conf', 'w') do |f|
     f.write(ERB.new(IO.read('modules/system/templates/make.conf.erb')).
-            result(binding))
+            result(@env.binding))
   end
   mkdir('/mnt/gentoo/etc/portage')
   mkdir('/mnt/gentoo/usr/local/portage')
@@ -82,7 +84,6 @@ file_create('/mnt/gentoo/dev/random' => '/mnt/gentoo') do
   sh('mount -o bind /dev /mnt/gentoo/dev')
 end
 
-desc('bootstrap gentoo for ec2')
 task(:bootstrap => '.bootstrap.')
 file_create('.bootstrap.' => ['/mnt/gentoo/proc/cpuinfo',
                               '/mnt/gentoo/dev/random']) do
@@ -107,7 +108,6 @@ file_create('.bootstrap.' => ['/mnt/gentoo/proc/cpuinfo',
   touch('.bootstrap.')
 end
 
-desc('configure gentoo with the basics')
 task(:configure => '.configure.')
 file_create('.configure.' => '.bootstrap.') do
   unless File.exists?('/mnt/gentoo/tmp/ge2c')
@@ -128,7 +128,6 @@ file_create('.configure.' => '.bootstrap.') do
   touch('.configure.')
 end
 
-desc('bundle the gentoo image for ec2')
 task(:bundle => '/mnt/gentoo/tmp/image.manifest.xml')
 file_create('/mnt/gentoo/tmp/image.manifest.xml' => '.configure.') do
   File.open('/mnt/gentoo/tmp/key.pem', 'w') do |f|
@@ -144,7 +143,6 @@ file_create('/mnt/gentoo/tmp/image.manifest.xml' => '.configure.') do
          "--fstab /etc/fstab --kernel #{@env.ec2_kernel_id} -d /tmp")
 end
 
-desc('upload the gentoo bundle to s3')
 task(:upload => '.upload.')
 file_create('.upload.' => '/mnt/gentoo/tmp/image.manifest.xml') do
   bname = "gentoo-#{@env.ec2_instance_type}-#{@env.ec2_instance_cpu}"<<
@@ -159,4 +157,90 @@ file_create('.upload.' => '/mnt/gentoo/tmp/image.manifest.xml') do
          "ec2-register -K /tmp/key.pem -C /tmp/cert.pem " <<
          "#{bname}/image.manifest.xml")
   touch('.upload.')
+  puts(":)")
+end
+
+######################################################################
+# Instance
+######################################################################
+
+task(:group, [:domain] => :env) do |t, args|
+  # create a domain security group
+  begin
+    @ec2.create_security_group(:group_name => args.domain,
+                               :group_description => "#{@env.group} group")
+  rescue EC2::InvalidGroupDuplicate ; end
+  # authorize all access inside the group
+  begin
+    @ec2.authorize_security_group_ingress(:group_name => args.domain,
+                                          :source_security_group_name =>
+                                          args.domain,
+                                          :source_security_group_owner_id =>
+                                          @env.owner_id.to_s)
+  rescue EC2::InvalidPermissionDuplicate ; end
+end
+
+desc("gimme access on ssh")
+task(:ingress, [:domain] => :group) do |t, args|
+  # create an ssh ingress for my ip
+  cidr = Hpricot(open('http://checkip.dyndns.com').read).at('body').
+    inner_text.gsub('Current IP Address: ', '') << '/32'
+  begin
+    @ec2.authorize_security_group_ingress(:group_name => args.domain,
+                                          :ip_protocol => 'tcp',
+                                          :cidr_ip => cidr,
+                                          :from_port => '22',
+                                          :to_port => '22')
+  rescue EC2::InvalidPermissionDuplicate ; end
+end
+
+desc("run an instance")
+task(:run, [:zone, :itype, :image, :domain, :hostname] => :ingress) do |t, args|
+  unless instance_id(args.hostname)
+    # create a keypair
+    begin
+      pem = "#{Dir.pwd}/ssh/#{args.hostname}.pem"
+      key = @ec2.create_keypair(:key_name => args.hostname).keyMaterial
+      File.open(pem, "w+") { |f| f.write(key) }
+      File.chmod(0600, pem)
+    rescue EC2::InvalidKeyPairDuplicate ; end
+    # create a host group
+    begin
+      @ec2.create_security_group(:group_name => args.hostname,
+                                 :group_description => args.hostname)
+    rescue EC2::InvalidGroupDuplicate ; end
+    # create a bucket for this host
+    AWS::S3::Base.establish_connection!(:access_key_id =>
+                                        @env.access_key_id,
+                                        :secret_access_key =>
+                                        @env.secret_access_key)
+    begin
+      AWS::S3::Bucket.create("#{args.hostname}.#{args.domain}")
+    rescue AWS::S3::BucketAlreadyExists ; end
+    # setup the boothook script
+    @env.hostname = args.hostname
+    @env.domain = args.domain
+    user_data = ERB.new(IO.read('boot.erb')).result(@env.binding)
+    # run the instance
+    @ec2.run_instances(:instance_type => args.itype,
+                       :image_id => args.image,
+                       :key_name => args.hostname,
+                       :availability_zone => args.zone,
+                       :group_id => [args.domain, args.hostname],
+                       :min_count => 1,
+                       :max_count => 1,
+                       :user_data => user_data)
+    puts(":)")
+  end
+end
+
+def instance_id(name)
+  resSet = @ec2.describe_instances.reservationSet
+  unless resSet.nil?
+    resSet.item.each do |r|
+      r.instancesSet.item.find do |i|
+        i.keyName == name && i.instanceState.name != 'terminated'
+      end
+    end
+  end
 end
