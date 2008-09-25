@@ -1,18 +1,19 @@
 class portage {
   file { "/etc/make.conf": content => template("portage/make.conf.erb") }
-  file { "/etc/portage/exclude": source => "puppet:///portage/exclude" }
+
   file { "/usr/local/portage": ensure => directory }
   package { "portage":
     category => "sys-apps",
-    require => [ File["/etc/make.conf"],
-                 File["/etc/portage/exclude"],
-                 File["/usr/local/portage"] ]
+    require => [ File["/etc/make.conf"], File["/usr/local/portage"] ]
   }
-  package { "eix": category => "app-portage", require => Package["portage"] }
+
+  package { [ "eix", "gentoolkit" ]:
+    category => "app-portage", require => Package["portage"]
+  }
   cron { "eix-sync":
     command => "/usr/bin/eix-sync 1>&2>/dev/null",
     user => root,
-    hour => 7,
+    hour => 7, # UTC 0700 is night in the US
     minute => 0,
     require => Package["eix"]
   }
@@ -22,78 +23,59 @@ class portage {
     require => Package["eix"]
   }
 
+  exec { "emerge-newuse":
+    command => "/usr/bin/emerge --deep --newuse --update world",
+    refreshonly => true,
+    notify => Exec["emerge-revdep"]
+  }
+  exec { "emerge-revdep":
+    command => "/usr/bin/revdep-rebuild",
+    require => Package["gentoolkit"],
+    refreshonly => true
+  }
+
   define keywords($category, $keywords="") {
-    exec { "$name-keywords-del":
+    exec { "$name-keywords":
       command => "/usr/bin/perl -p -i -e 's/^.*$category.$name.*//g' \
-                  /etc/portage/package.keywords",
-      unless => "/bin/grep '$category/$name $keywords' \
-                 /etc/portage/package.keywords 1>/dev/null",
-      before => [ Exec["$name-keywords-add"], Package[$name] ],
-      notify => Exec["$name-keywords-add"]
-    }
-    exec { "$name-keywords-add":
-      command => "/bin/echo '$category/$name $keywords' \
-                  >>/etc/portage/package.keywords",
-      refreshonly => true,
-      before => [ Exec["$name-keywords-clean"], Package[$name] ],
-      notify => Exec["$name-keywords-clean"]
-    }
-    exec { "$name-keywords-clean":
-      command => "/bin/sed '/^$/d' /etc/portage/package.keywords \
-                  | /usr/bin/sort >/etc/portage/package.keywords.tmp && \
+                      /etc/portage/package.keywords && \
+                  /bin/echo '$category/$name $keywords' \
+                      >>/etc/portage/package.keywords &&
+                  /bin/sed '/^$/d' /etc/portage/package.keywords | \
+                      /usr/bin/sort >/etc/portage/package.keywords.tmp && \
                   /bin/mv /etc/portage/package.keywords.tmp \
-                  /etc/portage/package.keywords",
-      refreshonly => true,
+                      /etc/portage/package.keywords",
+      unless => "/bin/grep '$category/$name $keywords' \
+                     /etc/portage/package.keywords 1>/dev/null",
       before => Package[$name]
     }
   }
 
   define use($category, $use) {
-    exec { "$name-use-del":
+    exec { "$name-use":
       command => "/usr/bin/perl -p -i -e 's/^.*$category.$name.*//g' \
-                  /etc/portage/package.use",
+                      /etc/portage/package.use && \
+                  /bin/echo '$category/$name $use' >>/etc/portage/package.use && \
+                  /bin/sed '/^$/d' /etc/portage/package.use | \
+                      /usr/bin/sort >/etc/portage/package.use.tmp && \
+                  /bin/mv /etc/portage/package.use.tmp /etc/portage/package.use",
       unless => "/bin/grep '$category/$name $use' /etc/portage/package.use \
-                 1>/dev/null",
-      notify => Exec["$name-use-add"],
-      before => [ Exec["$name-use-add"], Package[$name] ]
-    }
-    exec { "$name-use-add":
-      command => "/bin/echo '$category/$name $use' >>/etc/portage/package.use",
-      refreshonly => true,
-      notify => Exec["$name-use-clean"],
-      before => [ Exec["$name-use-clean"], Package[$name] ]
-    }
-    exec { "$name-use-clean":
-      command => "/bin/sed '/^$/d' /etc/portage/package.use \
-                  | /usr/bin/sort >/etc/portage/package.use.tmp && \
-                  /bin/mv /etc/portage/package.use.tmp \
-                  /etc/portage/package.use",
-      refreshonly => true,
+                     1>/dev/null",
+      notify => Exec["emerge-newuse"],
       before => Package[$name]
     }
   }
 
   define unmask($category) {
-    exec { "$name-unmask-del":
+    exec { "$name-unmask":
       command => "/usr/bin/perl -p -i -e 's/^.*$category.$name.*//g' \
-                  /etc/portage/package.unmask",
-      unless => "/bin/grep '$category/$name' /etc/portage/package.unmask \
-                 1>/dev/null",
-      notify => Exec["$name-unmask-add"],
-      before => [ Exec["$name-unmask-add"], Package[$name] ]
-    }
-    exec { "$name-unmask-add":
-      command => "/bin/echo '$category/$name' >>/etc/portage/package.unmask",
-      refreshonly => true,
-      notify => Exec["$name-unmask-clean"],
-      before => [ Exec["$name-unmask-clean"], Package[$name] ]
-    }
-    exec { "$name-unmask-clean":
-      command => "/bin/sed '/^$/d' /etc/portage/package.unmask \
-                  | /usr/bin/sort >/etc/portage/package.unmask.tmp && \
+                      /etc/portage/package.unmask && \
+                  /bin/echo '$category/$name' >>/etc/portage/package.unmask && \
+                  /bin/sed '/^$/d' /etc/portage/package.unmask | \
+                      /usr/bin/sort >/etc/portage/package.unmask.tmp && \
                   /bin/mv /etc/portage/package.unmask.tmp \
-                  /etc/portage/package.unmask",
-      refreshonly => true,
+                      /etc/portage/package.unmask",
+      unless => "/bin/grep '$category/$name' /etc/portage/package.unmask \
+                     1>/dev/null",
       before => Package[$name]
     }
   }
