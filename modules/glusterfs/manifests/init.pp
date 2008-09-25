@@ -3,10 +3,10 @@ class glusterfs inherits fuse {
     source => "puppet:///glusterfs/glusterfs",
     recurse => true,
     notify => Exec["update-eix"],
-    before => Package::Keywords["glusterfs"],
+    before => Portage::Keywords["glusterfs"],
     require => Class["fuse"]
   }
-  package::keywords { "glusterfs": category => "sys-fs" }
-  package::use { "glusterfs": category => "sys-fs", use => "client" }
+  portage::keywords { "glusterfs": category => "sys-fs" }
+  portage::use { "glusterfs": category => "sys-fs", use => "client" }
   package { "glusterfs": category => "sys-fs", require => Class["fuse"] }
 }

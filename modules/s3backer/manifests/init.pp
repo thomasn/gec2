@@ -3,9 +3,9 @@ class s3backer inherits fuse {
     source => "puppet:///s3backer/s3backer",
     recurse => true,
     notify => Exec["update-eix"],
-    before => Package::Keywords["s3backer"],
+    before => Portage::Keywords["s3backer"],
     require => Class["fuse"]
   }
-  package::keywords { "s3backer": category => "sys-fs" }
+  portage::keywords { "s3backer": category => "sys-fs" }
   package { "s3backer": category => "sys-fs", require => Class["fuse"] }
 }

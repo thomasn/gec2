@@ -4,11 +4,11 @@ class kernel {
     source => "puppet:///kernel/ec2-sources",
     recurse => true,
     notify => Exec["update-eix"],
-    before => Package::Keywords["ec2-sources"],
+    before => Portage::Keywords["ec2-sources"],
     require => File["/usr/local/portage/sys-kernel"]
   }
-  package::keywords { "ec2-sources": category => "sys-kernel" }
-  package::use { "ec2-sources": category => "sys-kernel", use => "symlink" }
+  portage::keywords { "ec2-sources": category => "sys-kernel" }
+  portage::use { "ec2-sources": category => "sys-kernel", use => "symlink" }
   package { "ec2-sources":
     category => "sys-kernel", before => Exec["ec2-sources-conf"]
   }

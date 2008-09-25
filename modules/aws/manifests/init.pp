@@ -4,17 +4,17 @@ class aws {
     source => "puppet:///aws/ec2-ami-tools",
     recurse => true,
     notify => Exec["update-eix"],
-    before => Package::Keywords["ec2-ami-tools"],
+    before => Portage::Keywords["ec2-ami-tools"],
     require => File["/usr/local/portage/sys-cluster"]
   }
   file { "/usr/local/portage/sys-cluster/ec2-api-tools":
     source => "puppet:///aws/ec2-api-tools",
     recurse => true,
     notify => Exec["update-eix"],
-    before => Package::Keywords["ec2-api-tools"],
+    before => Portage::Keywords["ec2-api-tools"],
     require => File["/usr/local/portage/sys-cluster"]
   }
-  package::keywords { [ "ec2-api-tools", "ec2-ami-tools" ]:
+  portage::keywords { [ "ec2-api-tools", "ec2-ami-tools" ]:
     category => "sys-cluster", require => Class["ruby"]
   }
   package { [ "ec2-api-tools", "ec2-ami-tools" ]: category => "sys-cluster" }
@@ -27,7 +27,7 @@ class aws {
     unless => "/sbin/lsmod | grep loop 1>/dev/null",
     require => Class["kernel"]
   }
-  package::gem { [ "aws-sdb", "aws-s3", "amazon-ec2", "SQS" ]:
+  ruby::gem { [ "aws-sdb", "aws-s3", "amazon-ec2", "SQS" ]:
     require => Class["ruby"]
   }
 }

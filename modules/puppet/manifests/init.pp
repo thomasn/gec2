@@ -3,8 +3,8 @@ class puppet {
   file { "/etc/puppet/fileserver.conf":
     source => "puppet:///puppet/fileserver.conf"
   }
-  package::keywords { "facter": category => "dev-ruby" }
+  portage::keywords { "facter": category => "dev-ruby" }
   package { "facter": category => "dev-ruby", require => Class["ruby"] }
-  package::keywords { "puppet": category => "app-admin" }
+  portage::keywords { "puppet": category => "app-admin" }
   package { "puppet": category => "app-admin", require => Package["facter"] }
 }
