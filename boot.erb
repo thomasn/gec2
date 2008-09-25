@@ -1,0 +1,73 @@
+#!/bin/bash
+
+if [ ! -f /boot/.keep ]; then
+    cat >/etc/hosts <<EOF
+# /etc/hosts: Local Host Database
+#
+# This file describes a number of aliases-to-address mappings for the for
+# local hosts that share this file.
+#
+# In the presence of the domain name service or NIS, this file may not be
+# consulted at all; see /etc/host.conf for the resolution order.
+#
+
+# IPv4 and IPv6 localhost aliases
+127.0.0.1	localhost
+::1		localhost
+
+#
+# Imaginary network.
+#10.0.0.2               myname
+#10.0.0.3               myfriend
+#
+# According to RFC 1918, you can use the following IP networks for private
+# nets which will never be connected to the Internet:
+#
+#       10.0.0.0        -   10.255.255.255
+#       172.16.0.0      -   172.31.255.255
+#       192.168.0.0     -   192.168.255.255
+#
+# In case you want to be able to connect directly to the Internet (i.e. not
+# behind a NAT, ADSL router, etc...), you need real official assigned
+# numbers.  Do not try to invent your own network numbers but instead get one
+# from your network provider (if any) or from your regional registry (ARIN,
+# APNIC, LACNIC, RIPE NCC, or AfriNIC.)
+#
+
+### vvv ###
+`/usr/local/sbin/hosts -a '<%= access_key_id %>' -s '<%= secret_access_key %>'`
+### ^^^ ###
+EOF
+
+    cat >/etc/conf.d/hostname <<EOF
+# /etc/conf.d/hostname
+
+# Set to the hostname of this machine
+
+### vvv ###
+HOSTNAME="<%= hostname %>"
+### ^^^ ###
+EOF
+    rc-update add hostname default
+    /etc/init.d/hostname restart
+
+    cat >/etc/conf.d/net <<EOF
+# This blank configuration will automatically use DHCP for any net.*
+# scripts in /etc/init.d.  To create a more complete configuration,
+# please review /etc/conf.d/net.example and save your configuration
+# in /etc/conf.d/net (this file :]!).
+
+### vvv ###
+config_eth0=( "dhcp" )
+dhcp_eth0="nodns"
+dns_domain_eth0="<%= domain %>"
+dns_servers_eth0=( "172.16.0.23" )
+### ^^^ ###
+EOF
+    /etc/init.d/net.eth0 restart
+
+    rc-update add puppet default
+    /etc/init.d/puppet restart
+
+    touch /boot/.keep
+fi
