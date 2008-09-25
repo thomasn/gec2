@@ -30,9 +30,7 @@
 #fr_FR@euro ISO-8859-15
 #it_IT ISO-8859-1
 
-### GEC2 BEGIN
-
+### vvv ###
 en_US ISO-8859-1
 en_US.UTF-8 UTF-8
-
-### GEC2 END
+### ^^^ ###

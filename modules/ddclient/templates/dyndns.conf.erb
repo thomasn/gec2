@@ -158,8 +158,7 @@ ssl=yes					# use ssl-support.  Works with
 # password=my-namecheap.com-password		\
 # myhost.namecheap.com
 
-### GEC2 BEGIN
-
+### vvv ###
 login=<%= dyndns_login %>
 password=<%= dyndns_password %>
 use=web,                   \
@@ -169,5 +168,5 @@ wildcard=yes,              \
 server=members.dyndns.org, \
 protocol=dyndns2           \
 <%= dyndns_hostname %>
+### ^^^ ###
 
-### GEC2 END

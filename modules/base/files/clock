@@ -33,8 +33,6 @@ SRM="no"
 # If your alpha uses the ARC console, set this to "yes".
 ARC="no"
 
-### GEC2 BEGIN
-
+### vvv ###
 TIMEZONE="GMT"
-
-### GEC2 END
+### ^^^ ###

@@ -117,8 +117,7 @@ Subsystem	sftp	/usr/lib/misc/sftp-server
 #	AllowTcpForwarding no
 #	ForceCommand cvs server
 
-### GEC2 BEGIN
-
+### vvv ###
 ChallengeResponseAuthentication no
 ClientAliveCountMax 10
 ClientAliveInterval 30
@@ -127,5 +126,4 @@ PasswordAuthentication no
 PermitUserEnvironment yes
 StrictModes yes
 UseDNS no
-
-### GEC2 END
+### ^^^ ###

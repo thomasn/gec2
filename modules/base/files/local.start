@@ -3,15 +3,10 @@
 # This is a good place to load any misc programs
 # on startup (use &>/dev/null to hide output)
 
-### GEC2 BEGIN
-
-# configure the root key
+### vvv ###
 mkdir -p /root/.ssh 2>/dev/null
 wget -O - http://169.254.169.254/2008-02-01/meta-data/public-keys/0/openssh-key\
   >/root/.ssh/authorized_keys
 chmod -R go-rwsx /root
-
-# treat our user-data as a boot-hook shell script
 wget -O - http://169.254.169.254/2008-02-01/user-data | sh
-
-### GEC2 END
+### ^^^ ###
