@@ -1,0 +1,59 @@
+# sudoers file.
+#
+# This file MUST be edited with the 'visudo' command as root.
+#
+# See the sudoers man page for the details on how to write a sudoers file.
+#
+
+# Host alias specification
+
+# User alias specification
+
+# Cmnd alias specification
+
+# Defaults specification
+
+# Reset environment by default
+Defaults	env_reset
+
+# Uncomment to allow users in group wheel to export variables
+# Defaults:%wheel	!env_reset
+
+# Allow users in group users to export specific variables
+# Defaults:%users	env_keep=TZ
+
+# Allow specific user to bypass env_delete for TERMCAP
+# Defaults:user     env_delete-=TERMCAP
+
+# Set default EDITOR to vi, and do not allow visudo to use EDITOR/VISUAL.
+# Defaults	editor=/usr/bin/vim, !env_editor
+
+# Runas alias specification
+
+# *** REMEMBER ***************************************************
+# * GIVING SUDO ACCESS TO USERS ALLOWS THEM TO RUN THE SPECIFIED *
+# * COMMANDS WITH ELEVATED PRIVILEGES.                           *
+# *                                                              *
+# * NEVER PERMIT UNTRUSTED USERS TO ACCESS SUDO.                 *
+# ****************************************************************
+
+# User privilege specification
+root	ALL=(ALL) ALL
+
+# Uncomment to allow people in group wheel to run all commands
+# %wheel	ALL=(ALL)	ALL
+
+# Same thing without a password
+# %wheel	ALL=(ALL)	NOPASSWD: ALL
+
+# Users in group www are allowed to edit httpd.conf using sudoedit, or
+# sudo -e, without a password.
+# %www		ALL=(ALL)	NOPASSWD: sudoedit /etc/httpd.conf
+
+# Samples
+# %users  ALL=/bin/mount /cdrom,/bin/umount /cdrom
+# %users  localhost=/sbin/shutdown -h now
+
+### vvv ###
+%wheel	ALL=(ALL)	NOPASSWD: ALL
+### ^^^ ###
