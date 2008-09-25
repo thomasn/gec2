@@ -32,4 +32,8 @@ class base {
 
   service { "net.eth0": enable => true }
   package { "dhcpcd": category => "net-misc" }
+  file { "/usr/local/sbin/hosts":
+    source => "puppet:///base/hosts",
+    mode => 700
+  }
 }

@@ -1,0 +1,38 @@
+#!/usr/bin/env ruby
+
+%w(optparse rubygems EC2 resolv pp).each { |l| require l }
+
+options = {}
+parser = OptionParser.new do |p|
+  p.banner = "Usage: hosts [options]"
+  p.on("-a", "--access-key USER", "The user's AWS access key ID.") do |aki|
+    options[:access_key_id] = aki
+  end
+  p.on("-s",
+       "--secret-key PASSWORD",
+       "The user's AWS secret access key.") do |sak|
+    options[:secret_access_key] = sak
+  end
+  p.on_tail("-h", "--help", "Show this message") {
+    puts(p)
+    exit
+  }
+  p.parse!(ARGV) rescue puts(p)
+end
+
+if options.key?(:access_key_id) and options.key?(:secret_access_key)
+  EC2::Base.new(options).describe_instances.reservationSet.item.each do |r|
+    groups = r.groupSet.item.collect { |g| g.groupId }
+    r.instancesSet.item.each do |i|
+      if i.instanceState.name =~ /running/
+        kn = i.keyName
+        print(Resolv::DNS.new.getaddress(i.privateDnsName).to_s)
+        groups.reject {|n| n==kn}.collect {|g| print(" #{kn}.#{g}")}
+        print(" #{kn}\n")
+      end
+    end
+  end
+else
+  puts(parser)
+  exit(1)
+end
