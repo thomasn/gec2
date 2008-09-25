@@ -195,7 +195,8 @@ task(:ingress, [:domain] => :group) do |t, args|
 end
 
 desc("run an instance")
-task(:run, [:zone, :itype, :image, :domain, :hostname] => :ingress) do |t, args|
+task(:run, [:zone, :itype, :image, :domain, :master, :hostname] =>
+     :ingress) do |t, args|
   unless instance_id(args.hostname)
     # create a keypair
     begin
@@ -220,6 +221,7 @@ task(:run, [:zone, :itype, :image, :domain, :hostname] => :ingress) do |t, args|
     # setup the boothook script
     @env.hostname = args.hostname
     @env.domain = args.domain
+    @env.master = args.master
     user_data = ERB.new(IO.read('boot.erb')).result(@env.binding)
     # run the instance
     @ec2.run_instances(:instance_type => args.itype,

@@ -66,6 +66,13 @@ dns_servers_eth0=( "172.16.0.23" )
 EOF
     /etc/init.d/net.eth0 restart
 
+<% unless puppetmaster.nil? -%>
+    cat >/etc/env.d/69puppet <<EOF
+PUPPET_EXTRA_OPTS='--server <%= master %>.<%= domain %>'
+EOF
+    env-update
+    source /etc/profile
+<% end -%>
     rc-update add puppet default
     /etc/init.d/puppet restart
 
