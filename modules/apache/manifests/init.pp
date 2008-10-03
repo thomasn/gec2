@@ -1,4 +1,4 @@
-class apache inherits base {
+class apache {
   package { "apache": category => "www-apache" }
   file { "/etc/conf.d/apache2":
     source => "puppet:///apache/apache2",

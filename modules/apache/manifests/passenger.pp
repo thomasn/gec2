@@ -7,7 +7,7 @@ class apache::passenger inherits apache {
   file { "/u/apps": ensure => "/var/www" }
   file { "/var/www": owner => "root", group => "apache", mode => 2775 }
 
-  define app($env, $dir) {
+  define setup($rails_env = "production", $public_dir) {
     file { "/etc/apache2/vhosts.d/$name.conf":
       content => template("apache/vhost.conf.erb"),
       notify => Service["apache2"],

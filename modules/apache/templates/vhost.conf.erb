@@ -1,9 +1,9 @@
 <VirtualHost *:80>
   ServerName <%= name %>
   ServerAlias *.<%= name %>
-  RailsEnv <%= env %>
-  DocumentRoot <%= dir %>/public
-  <Directory <%= dir %>/public>
+  RailsEnv <%= rails_env %>
+  DocumentRoot <%= public_dir %>
+  <Directory <%= public_dir %>>
     Allow from all
   </Directory>
 </VirtualHost>
