@@ -23,9 +23,11 @@ class portage {
     require => Package["eix"]
   }
 
+  file { "/etc/portage/package.use": ensure => file }
   exec { "emerge-newuse":
     command => "/usr/bin/emerge --deep --newuse --update world",
     refreshonly => true,
+    subscribe => File["/etc/portage/package.use"],
     notify => Exec["emerge-revdep"]
   }
   exec { "emerge-revdep":
@@ -39,7 +41,7 @@ class portage {
       command => "/usr/bin/perl -p -i -e 's/^.*$category.$name.*//g' \
                       /etc/portage/package.keywords && \
                   /bin/echo '$category/$name $keywords' \
-                      >>/etc/portage/package.keywords &&
+                      >>/etc/portage/package.keywords && \
                   /bin/sed '/^$/d' /etc/portage/package.keywords | \
                       /usr/bin/sort >/etc/portage/package.keywords.tmp && \
                   /bin/mv /etc/portage/package.keywords.tmp \
@@ -60,7 +62,6 @@ class portage {
                   /bin/mv /etc/portage/package.use.tmp /etc/portage/package.use",
       unless => "/bin/grep '$category/$name $use' /etc/portage/package.use \
                      1>/dev/null",
-      notify => Exec["emerge-newuse"],
       before => Package[$name]
     }
   }
