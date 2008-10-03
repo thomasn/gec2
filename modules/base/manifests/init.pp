@@ -1,7 +1,9 @@
 class base {
-  include autofs, aws, cron, ddclient, encfs, fuse, git, glusterfs,
-    kernel, ntp, portage, puppet, ruby, s3backer, s3fs, ssh, sshfs,
-    sudo, syslog
+  include portage, ruby, puppet
+  include kernel, aws
+  include ddclient, ntp, ssh
+  include cron, syslog, sudo, git
+  include autofs, fuse, encfs, glusterfs, s3backer, s3fs, sshfs
 
   file { "/etc/motd": source => "puppet:///base/motd" }
 
