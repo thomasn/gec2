@@ -161,12 +161,9 @@ ssl=yes					# use ssl-support.  Works with
 ### vvv ###
 login=<%= login %>
 password=<%= password %>
-use=web,                   \
-web=http://169.254.169.254/2008-02-01/meta-data/public-ipv4
-custom=yes,                \
-wildcard=yes,              \
+use=web, web=http://169.254.169.254/2008-02-01/meta-data/public-ipv4
+protocol=dyndns2, \
 server=members.dyndns.org, \
-protocol=dyndns2           \
-<%= name %>
+custom=yes, \
+<%= "#{name}\n#{add.kind_of?(Array) ? add.join("\n") : add}" %>
 ### ^^^ ###
-
