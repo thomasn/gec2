@@ -32,12 +32,11 @@ is a portage overlay for packages helpful to running servers at ec2.
      m1.small, c1.medium            -> ami-d8a347b1 w/ aki-9b00e5f2
      m1.large, m1.xlarge, c1.xlarge -> ami-c8ac48a1 w/ aki-9800e5f1
 
-* - Setup up ruby, rubygems, puppet & git on the server instance.
+* - Setup up ruby, rubygems & git on the server instance.
 
 yum update -y
 yum install ruby-devel rubygems git-core -y
 rm -f ~/.gemrc
-gem sources -a http://gems.github.com
 gem update --system
 gem update
 gem install rake amazon-ec2 aws-s3 hpricot facter --no-rdoc --no-ri
