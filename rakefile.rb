@@ -59,12 +59,11 @@ file_create('/mnt/gentoo' => '/tmp/stage3-2008.0.tar.bz2') do
   cp('/etc/mtab', '/mnt/gentoo/etc')
   cp('/etc/resolv.conf', '/mnt/gentoo/etc')
   File.open('/mnt/gentoo/etc/make.conf', 'w') do |f|
-    f.write(ERB.new(IO.read('modules/system/templates/make.conf.erb')).
+    f.write(ERB.new(IO.read('modules/portage/templates/make.conf.erb')).
             result(@env.binding))
   end
   mkdir('/mnt/gentoo/etc/portage')
   mkdir('/mnt/gentoo/usr/local/portage')
-  cp('modules/system/files/exclude', '/mnt/gentoo/etc/portage')
   File.open('/mnt/gentoo/etc/portage/package.keywords', 'w') do |f|
     f.write("app-admin/puppet\n")
     f.write("dev-lang/ruby\n")
@@ -87,8 +86,7 @@ end
 task(:bootstrap => '.bootstrap.')
 file_create('.bootstrap.' => ['/mnt/gentoo/proc/cpuinfo',
                               '/mnt/gentoo/dev/random']) do
-  chroot('rm -rf /tmp && ln -sf /var/tmp /tmp',
-         'groupmems -p -g users',
+  chroot('groupmems -p -g users',
          "usermod -p `dd if=/dev/urandom count=50 2>/dev/null" <<
          " | md5sum | cut -d ' ' -f1-1` root",
          'emerge --sync',
@@ -198,10 +196,11 @@ desc("run an instance")
 task(:run, [:zone, :itype, :image, :domain, :master, :hostname] =>
      :ingress) do |t, args|
   unless instance_id(args.hostname)
+    fqdn = "#{args.hostname}.#{args.domain}"
     # create a keypair
     begin
-      pem = "#{Dir.pwd}/ssh/#{args.hostname}.pem"
-      key = @ec2.create_keypair(:key_name => args.hostname).keyMaterial
+      pem = "#{Dir.pwd}/ssh/#{args.hostname}.#{args.domain}.pem"
+      key = @ec2.create_keypair(:key_name => fqdn).keyMaterial
       File.open(pem, "w+") { |f| f.write(key) }
       File.chmod(0600, pem)
     rescue EC2::InvalidKeyPairDuplicate ; end
@@ -216,7 +215,7 @@ task(:run, [:zone, :itype, :image, :domain, :master, :hostname] =>
                                         :secret_access_key =>
                                         @env.secret_access_key)
     begin
-      AWS::S3::Bucket.create("#{args.hostname}.#{args.domain}")
+      AWS::S3::Bucket.create(fqdn)
     rescue AWS::S3::BucketAlreadyExists ; end
     # setup the boothook script
     @env.hostname = args.hostname
@@ -226,7 +225,7 @@ task(:run, [:zone, :itype, :image, :domain, :master, :hostname] =>
     # run the instance
     @ec2.run_instances(:instance_type => args.itype,
                        :image_id => args.image,
-                       :key_name => args.hostname,
+                       :key_name => fqdn,
                        :availability_zone => args.zone,
                        :group_id => [args.domain, args.hostname],
                        :min_count => 1,
