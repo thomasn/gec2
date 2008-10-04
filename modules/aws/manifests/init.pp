@@ -27,7 +27,4 @@ class aws {
     unless => "/sbin/lsmod | grep loop 1>/dev/null",
     require => Class["kernel"]
   }
-  ruby::gem { [ "aws-sdb", "aws-s3", "amazon-ec2", "SQS" ]:
-    require => Class["ruby"]
-  }
 }
