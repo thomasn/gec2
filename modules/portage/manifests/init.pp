@@ -17,11 +17,6 @@ class portage {
     minute => 0,
     require => Package["eix"]
   }
-  exec { "update-eix":
-    command => "/usr/bin/update-eix 1>&2>/dev/null",
-    refreshonly => true,
-    require => Package["eix"]
-  }
 
   file { "/etc/portage/package.use": ensure => file }
   exec { "emerge-newuse":

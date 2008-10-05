@@ -2,7 +2,10 @@ class s3fs inherits fuse {
   include autofs
 
   portage::keywords { "s3fs": category => "sys-fs" }
-  package { "s3fs": category => "sys-fs", require => Class["fuse"] }
+  package { "s3fs":
+    category => "sys-fs",
+    require => [ Class["fuse"], Class["autofs"] ]
+  }
   exec { "s3fs-auto-master":
     command => '/bin/cat >>/etc/autofs/auto.master <<EOF
 ### vvv ###

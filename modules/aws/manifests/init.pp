@@ -3,16 +3,23 @@ class aws {
   file { "/usr/local/portage/sys-cluster/ec2-ami-tools":
     source => "puppet:///aws/ec2-ami-tools",
     recurse => true,
-    notify => Exec["update-eix"],
+    notify => Exec["update-eix-aws"],
     before => Portage::Keywords["ec2-ami-tools"],
     require => File["/usr/local/portage/sys-cluster"]
   }
   file { "/usr/local/portage/sys-cluster/ec2-api-tools":
     source => "puppet:///aws/ec2-api-tools",
     recurse => true,
-    notify => Exec["update-eix"],
-    before => Portage::Keywords["ec2-api-tools"],
+    notify => Exec["update-eix-aws"],
+    before => Portage::Keywords["ec2-ami-tools"],
     require => File["/usr/local/portage/sys-cluster"]
+  }
+  exec { "update-eix-aws":
+    command => "/usr/bin/update-eix",
+    before => [
+      Portage::Keywords["ec2-api-tools"],
+      Portage::Keywords["ec2-ami-tools"]
+    ]
   }
   portage::keywords { [ "ec2-api-tools", "ec2-ami-tools" ]:
     category => "sys-cluster", require => Class["ruby"]

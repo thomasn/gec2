@@ -3,9 +3,13 @@ class kernel {
   file { "/usr/local/portage/sys-kernel/ec2-sources":
     source => "puppet:///kernel/ec2-sources",
     recurse => true,
-    notify => Exec["update-eix"],
+    notify => Exec["update-eix-kernel"],
     before => Portage::Keywords["ec2-sources"],
     require => File["/usr/local/portage/sys-kernel"]
+  }
+  exec { "update-eix-kernel":
+    command => "/usr/bin/update-eix",
+    before => Portage::Keywords["ec2-sources"],
   }
   portage::keywords { "ec2-sources": category => "sys-kernel" }
   portage::use { "ec2-sources": category => "sys-kernel", use => "symlink" }

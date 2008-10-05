@@ -1,4 +1,4 @@
-CFLAGS="-march=<%= ec2_instance_cpu %> -O2 -pipe<%= ' -mno-tls-direct-seg-refs' if hardwaremodel = 'i686' %>"
+CFLAGS="-march=<%= ec2_instance_cpu %> -O2 -pipe<%= ' -mno-tls-direct-seg-refs' if hardwaremodel == 'i686' %>"
 CHOST="<%= hardwaremodel %>-pc-linux-gnu"
 CXXFLAGS="${CFLAGS}"
 FEATURES="parallel-fetch buildpkg"
