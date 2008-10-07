@@ -31,8 +31,6 @@ def chroot(*a)
   script = ['env-update', 'source /etc/profile', a].flatten.join(" && \n")
   File.open('/mnt/gentoo/tmp/rake.sh', 'w')  { |f| f.write script }
   sh('chroot /mnt/gentoo /bin/bash /tmp/rake.sh')
-ensure
-  rm('/mnt/gentoo/tmp/rake.sh')
 end
 
 task(:env) do
@@ -46,6 +44,8 @@ task(:facts => :env) do
   Facter.collection.each { |k, v| @env.send("#{k}=", v) }
 end
 
+directory('/mnt/gentoo')
+
 file_create('/tmp/stage3-2008.0.tar.bz2' => :facts) do
   sh('wget -O /tmp/stage3-2008.0.tar.bz2 ' <<
      'http://gentoo.osuosl.org/releases/' <<
@@ -53,38 +53,72 @@ file_create('/tmp/stage3-2008.0.tar.bz2' => :facts) do
      "stage3-#{@env.architecture =~ /i386/ ? 'i686' : 'amd64'}-2008.0.tar.bz2")
 end
 
-file_create('/mnt/gentoo' => '/tmp/stage3-2008.0.tar.bz2') do
-  mkdir_p('/mnt/gentoo')
+file_create('/mnt/gentoo/etc' => ['/mnt/gentoo',
+                                  '/tmp/stage3-2008.0.tar.bz2']) do
   sh('tar -vxjf /tmp/stage3-2008.0.tar.bz2 -C /mnt/gentoo')
-  cp('/etc/mtab', '/mnt/gentoo/etc')
+end
+
+file_create('/mnt/gentoo/etc/resolv.conf' => '/mnt/gentoo/etc') do
   cp('/etc/resolv.conf', '/mnt/gentoo/etc')
+end
+
+file_create('/mnt/gentoo/etc/make.conf' => '/mnt/gentoo/etc') do
   File.open('/mnt/gentoo/etc/make.conf', 'w') do |f|
     f.write(ERB.new(IO.read('modules/portage/templates/make.conf.erb')).
             result(@env.binding))
   end
-  mkdir('/mnt/gentoo/etc/portage')
-  mkdir('/mnt/gentoo/usr/local/portage')
+end
+
+directory('/mnt/gentoo/etc/portage')
+file('/mnt/gentoo/etc/portage' => '/mnt/gentoo/etc')
+
+file_create('/mnt/gentoo/etc/portage/package.keywords' =>
+            '/mnt/gentoo/etc/portage') do
   File.open('/mnt/gentoo/etc/portage/package.keywords', 'w') do |f|
     f.write("app-admin/puppet\n")
     f.write("dev-lang/ruby\n")
     f.write("dev-ruby/facter\n")
     f.write("dev-ruby/rubygems\n")
   end
+end
+
+file_create('/mnt/gentoo/etc/portage/package.unmask' =>
+            '/mnt/gentoo/etc/portage') do
   File.open('/mnt/gentoo/etc/portage/package.unmask', 'w') do |f|
     f.write("dev-lang/ruby\n")
   end
 end
 
-file_create('/mnt/gentoo/proc/cpuinfo' => '/mnt/gentoo') do
+file_create('/mnt/gentoo/proc/cpuinfo' => '/mnt/gentoo/etc') do
   sh('mount -t proc none /mnt/gentoo/proc')
 end
 
-file_create('/mnt/gentoo/dev/random' => '/mnt/gentoo') do
+file_create('/mnt/gentoo/dev/random' => '/mnt/gentoo/etc') do
   sh('mount -o bind /dev /mnt/gentoo/dev')
 end
 
+file_create('/mnt/gentoo/etc/mtab' => '/mnt/gentoo/etc') do
+  cp('/etc/mtab', '/mnt/gentoo/etc')
+end
+
+file_create('/mnt/gentoo/tmp/key.pem' => '/mnt/gentoo/etc') do
+  File.open('/mnt/gentoo/tmp/key.pem', 'w') do |f|
+    f.write("#{@env.key.strip}\n")
+  end
+end
+
+file_create('/mnt/gentoo/tmp/cert.pem' => '/mnt/gentoo/etc') do
+  File.open('/mnt/gentoo/tmp/cert.pem', 'w') do |f|
+    f.write("#{@env.cert.strip}\n")
+  end
+end
+
 task(:bootstrap => '.bootstrap.')
-file_create('.bootstrap.' => ['/mnt/gentoo/proc/cpuinfo',
+file_create('.bootstrap.' => ['/mnt/gentoo/etc/resolv.conf',
+                              '/mnt/gentoo/etc/make.conf',
+                              '/mnt/gentoo/etc/portage/package.keywords',
+                              '/mnt/gentoo/etc/portage/package.unmask',
+                              '/mnt/gentoo/proc/cpuinfo',
                               '/mnt/gentoo/dev/random']) do
   chroot('groupmems -p -g users',
          "usermod -p `dd if=/dev/urandom count=50 2>/dev/null" <<
@@ -127,13 +161,10 @@ file_create('.configure.' => '.bootstrap.') do
 end
 
 task(:bundle => '/mnt/gentoo/tmp/image.manifest.xml')
-file_create('/mnt/gentoo/tmp/image.manifest.xml' => '.configure.') do
-  File.open('/mnt/gentoo/tmp/key.pem', 'w') do |f|
-    f.write(@env.key.strip)
-  end
-  File.open('/mnt/gentoo/tmp/cert.pem', 'w') do |f|
-    f.write(@env.cert.strip)
-  end
+file_create('/mnt/gentoo/tmp/image.manifest.xml' => ['/mnt/gentoo/tmp/key.pem',
+                                                     '/mnt/gentoo/tmp/cert.pem',
+                                                     '/mnt/gentoo/etc/mtab',
+                                                     '.configure.']) do
   chroot("ec2-bundle-vol -b -u #{@env.owner_id} " <<
          "-k /tmp/key.pem -c /tmp/cert.pem " <<
          "-a -e /root,/dev,/proc,/sys,/tmp,/var/tmp,/mnt " <<
@@ -144,14 +175,15 @@ end
 task(:upload => '.upload.')
 file_create('.upload.' => '/mnt/gentoo/tmp/image.manifest.xml') do
   bname = "gentoo-#{@env.ec2_instance_type}-#{@env.ec2_instance_cpu}"<<
-    "-#{Time.now.to_f}"
+    "-#{Time.now.to_i}"
   AWS::S3::Base.establish_connection!(:access_key_id =>
                                       @env.access_key_id,
                                       :secret_access_key =>
                                       @env.secret_access_key)
   AWS::S3::Bucket.create(bname)
   chroot("ec2-upload-bundle -b #{bname} -a #{@env.access_key_id} " <<
-         "-s #{@env.secret_access_key} -m /tmp/image.manifest.xml ",
+         "-s #{@env.secret_access_key} -m /tmp/image.manifest.xml " <<
+         "--url http://s3.amazonaws.com",
          "ec2-register -K /tmp/key.pem -C /tmp/cert.pem " <<
          "#{bname}/image.manifest.xml")
   touch('.upload.')
@@ -162,29 +194,13 @@ end
 # Instance
 ######################################################################
 
-task(:group, [:domain] => :env) do |t, args|
-  # create a domain security group
-  begin
-    @ec2.create_security_group(:group_name => args.domain,
-                               :group_description => "#{@env.group} group")
-  rescue EC2::InvalidGroupDuplicate ; end
-  # authorize all access inside the group
-  begin
-    @ec2.authorize_security_group_ingress(:group_name => args.domain,
-                                          :source_security_group_name =>
-                                          args.domain,
-                                          :source_security_group_owner_id =>
-                                          @env.owner_id.to_s)
-  rescue EC2::InvalidPermissionDuplicate ; end
-end
-
 desc("gimme access on ssh")
-task(:ingress, [:domain] => :group) do |t, args|
+task(:ingress => :env) do |t, args|
   # create an ssh ingress for my ip
   cidr = Hpricot(open('http://checkip.dyndns.com').read).at('body').
     inner_text.gsub('Current IP Address: ', '') << '/32'
   begin
-    @ec2.authorize_security_group_ingress(:group_name => args.domain,
+    @ec2.authorize_security_group_ingress(:group_name => 'default',
                                           :ip_protocol => 'tcp',
                                           :cidr_ip => cidr,
                                           :from_port => '22',
@@ -193,41 +209,35 @@ task(:ingress, [:domain] => :group) do |t, args|
 end
 
 desc("run an instance")
-task(:run, [:zone, :itype, :image, :domain, :master, :hostname] =>
+task(:run, [:zone, :itype, :image, :master, :hostname] =>
      :ingress) do |t, args|
   unless instance_id(args.hostname)
-    fqdn = "#{args.hostname}.#{args.domain}"
     # create a keypair
     begin
-      pem = "#{Dir.pwd}/ssh/#{args.hostname}.#{args.domain}.pem"
-      key = @ec2.create_keypair(:key_name => fqdn).keyMaterial
+      key = @ec2.create_keypair(:key_name => args.hostname).keyMaterial
+      pem = File.expand_path("~/.ssh/#{args.hostname}.pem")
       File.open(pem, "w+") { |f| f.write(key) }
       File.chmod(0600, pem)
-    rescue EC2::InvalidKeyPairDuplicate ; end
+    rescue EC2::InvalidKeyPairDuplicate
+      puts "Key-pair '#{args.hostname}' already exits"
+    end
     # create a host group
     begin
       @ec2.create_security_group(:group_name => args.hostname,
                                  :group_description => args.hostname)
-    rescue EC2::InvalidGroupDuplicate ; end
-    # create a bucket for this host
-    AWS::S3::Base.establish_connection!(:access_key_id =>
-                                        @env.access_key_id,
-                                        :secret_access_key =>
-                                        @env.secret_access_key)
-    begin
-      AWS::S3::Bucket.create(fqdn)
-    rescue AWS::S3::BucketAlreadyExists ; end
+    rescue EC2::InvalidGroupDuplicate
+      puts "Security Group '#{args.hostname}' already exits"
+    end
     # setup the boothook script
     @env.hostname = args.hostname
-    @env.domain = args.domain
     @env.master = args.master
     user_data = ERB.new(IO.read('boot.erb')).result(@env.binding)
     # run the instance
     @ec2.run_instances(:instance_type => args.itype,
                        :image_id => args.image,
-                       :key_name => fqdn,
+                       :key_name => args.hostname,
                        :availability_zone => args.zone,
-                       :group_id => [args.domain, args.hostname],
+                       :group_id => ['default', args.hostname],
                        :min_count => 1,
                        :max_count => 1,
                        :user_data => user_data)
@@ -236,12 +246,13 @@ task(:run, [:zone, :itype, :image, :domain, :master, :hostname] =>
 end
 
 def instance_id(name)
-  resSet = @ec2.describe_instances.reservationSet
-  unless resSet.nil?
-    resSet.item.each do |r|
-      r.instancesSet.item.find do |i|
-        i.keyName == name && i.instanceState.name != 'terminated'
+  unless @ec2.describe_instances.reservationSet.nil?
+    @ec2.describe_instances.reservationSet.item.each do |r|
+      r.instancesSet.item.each do |i|
+        return i.instanceId if(i.keyName == name &&
+                               i.instanceState.name != 'terminated')
       end
     end
   end
+  nil
 end
