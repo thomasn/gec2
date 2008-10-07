@@ -3,19 +3,22 @@ class aws {
   file { "/usr/local/portage/sys-cluster/ec2-ami-tools":
     source => "puppet:///aws/ec2-ami-tools",
     recurse => true,
-    notify => Exec["update-eix-aws"],
     before => Portage::Keywords["ec2-ami-tools"],
     require => File["/usr/local/portage/sys-cluster"]
   }
   file { "/usr/local/portage/sys-cluster/ec2-api-tools":
     source => "puppet:///aws/ec2-api-tools",
     recurse => true,
-    notify => Exec["update-eix-aws"],
     before => Portage::Keywords["ec2-ami-tools"],
     require => File["/usr/local/portage/sys-cluster"]
   }
   exec { "update-eix-aws":
     command => "/usr/bin/update-eix",
+    refreshonly => true,
+    subscribe => [
+      File["/usr/local/portage/sys-cluster/ec2-ami-tools"],
+      File["/usr/local/portage/sys-cluster/ec2-api-tools"]
+    ],
     before => [
       Portage::Keywords["ec2-api-tools"],
       Portage::Keywords["ec2-ami-tools"]
@@ -33,8 +36,5 @@ class aws {
     command => "/sbin/modprobe loop",
     unless => "/sbin/lsmod | grep loop 1>/dev/null",
     require => Class["kernel"]
-  }
-  ruby::gem { [ "aws-sdb", "aws-s3", "amazon-ec2", "SQS", "right_aws" ]:
-    require => Class["ruby"]
   }
 }
