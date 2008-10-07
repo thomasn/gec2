@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ ! -f /boot/.keep ]; then
+if [ ! -f /boot/.1st ]; then
     cat >/etc/hosts <<EOF
 # /etc/hosts: Local Host Database
 #
@@ -51,30 +51,15 @@ EOF
     rc-update add hostname default
     /etc/init.d/hostname restart
 
-    cat >/etc/conf.d/net <<EOF
-# This blank configuration will automatically use DHCP for any net.*
-# scripts in /etc/init.d.  To create a more complete configuration,
-# please review /etc/conf.d/net.example and save your configuration
-# in /etc/conf.d/net (this file :]!).
-
-### vvv ###
-config_eth0=( "dhcp" )
-dhcp_eth0="nodns"
-dns_domain_eth0="<%= domain %>"
-dns_servers_eth0=( "172.16.0.23" )
-### ^^^ ###
-EOF
-    /etc/init.d/net.eth0 restart
-
-<% unless puppetmaster.nil? -%>
+<% unless master.nil? %>
     cat >/etc/env.d/69puppet <<EOF
-PUPPET_EXTRA_OPTS='--server <%= master %>.<%= domain %>'
+PUPPET_EXTRA_OPTS='--server <%= master %>.ec2'
 EOF
     env-update
     source /etc/profile
-<% end -%>
+<% end %>
     rc-update add puppet default
     /etc/init.d/puppet restart
 
-    touch /boot/.keep
+    touch /boot/.1st
 fi
