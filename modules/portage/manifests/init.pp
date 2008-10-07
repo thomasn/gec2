@@ -18,19 +18,6 @@ class portage {
     require => Package["eix"]
   }
 
-  file { "/etc/portage/package.use": ensure => file }
-  exec { "emerge-newuse":
-    command => "/usr/bin/emerge --deep --newuse --update world",
-    refreshonly => true,
-    subscribe => File["/etc/portage/package.use"],
-    notify => Exec["emerge-revdep"]
-  }
-  exec { "emerge-revdep":
-    command => "/usr/bin/revdep-rebuild",
-    require => Package["gentoolkit"],
-    refreshonly => true
-  }
-
   define keywords($category, $keywords="") {
     exec { "$name-keywords":
       command => "/usr/bin/perl -p -i -e 's/^.*$category.$name.*//g' \
