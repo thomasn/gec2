@@ -22,13 +22,10 @@ end
 
 if options.key?(:access_key_id) and options.key?(:secret_access_key)
   EC2::Base.new(options).describe_instances.reservationSet.item.each do |r|
-    groups = r.groupSet.item.collect { |g| g.groupId }
     r.instancesSet.item.each do |i|
       if i.instanceState.name =~ /running/
-        kn = i.keyName
-        print(Resolv::DNS.new.getaddress(i.privateDnsName).to_s)
-        groups.reject {|n| n==kn}.collect {|g| print(" #{kn}.#{g}")}
-        print(" #{kn}\n")
+        puts(Resolv::DNS.new.getaddress(i.privateDnsName).to_s +
+             " #{i.keyName}.ec2 #{i.keyName}")
       end
     end
   end
