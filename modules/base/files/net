@@ -1,0 +1,11 @@
+# This blank configuration will automatically use DHCP for any net.*
+# scripts in /etc/init.d.  To create a more complete configuration,
+# please review /etc/conf.d/net.example and save your configuration
+# in /etc/conf.d/net (this file :]!).
+
+### vvv ###
+config_eth0=( "dhcp" )
+dhcp_eth0="nodns"
+dns_domain_eth0="ec2"
+dns_servers_eth0=( "172.16.0.23" )
+### ^^^ ###

@@ -3,7 +3,7 @@ class base {
   include kernel, aws
   include ddclient, ntp, ssh
   include cron, syslog, sudo, git
-  include autofs, fuse, encfs, glusterfs, s3backer, s3fs, sshfs
+  include autofs, fuse, s3fs
 
   file { "/etc/motd": source => "puppet:///base/motd" }
 
@@ -34,8 +34,12 @@ class base {
 
   service { "net.eth0": enable => true }
   package { "dhcpcd": category => "net-misc" }
+  file { "/etc/conf.d/net": source => "puppet:///base/net" }
+
+  ruby::gem { "amazon-ec2": }
   file { "/usr/local/sbin/hosts":
     source => "puppet:///base/hosts",
-    mode => 700
+    mode => 700,
+    require => Ruby::Gem["amazon-ec2"]
   }
 }
