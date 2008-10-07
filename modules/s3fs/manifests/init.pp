@@ -13,7 +13,8 @@ class s3fs inherits fuse {
 ### ^^^ ###
 EOF
 ',
-    unless => "/bin/grep s3fs /etc/autofs/auto.master 1>/dev/null"
+    unless => "/bin/grep s3fs /etc/autofs/auto.master 1>/dev/null",
+    require => Class["autofs"]
   }
 
   define mount($access_key_id, $secret_access_key) {
