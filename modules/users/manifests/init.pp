@@ -13,8 +13,8 @@ class users {
       notify => Exec["scramble-password-$name"]
     }
     exec { "scramble-password-$name":
-      command => "/usr/sbin/usermod -p
-      `dd if=/dev/urandom count=50 2>/dev/null | md5sum | cut -d ' ' -f1-1`
+      command => "/usr/sbin/usermod -p \
+      `dd if=/dev/urandom count=50 2>/dev/null | md5sum | cut -d ' ' -f1-1` \
       $name",
       refreshonly => true
     }
