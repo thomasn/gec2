@@ -15,6 +15,7 @@ class mysql {
   service { "mysql": ensure => running, enable => true }
 
   define setup($db_user, $db_pass) {
+    include mysql
     exec { "mysql-create-db":
       command => "/usr/bin/mysqladmin create $name",
       unless => "/usr/bin/test -d /var/lib/mysql/$name",
