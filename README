@@ -47,22 +47,8 @@ gem clean
 git clone git://github.com/dysinger/gec2.git
 cd gec2
 
-* - Create your own env.yml file to house all your Amazon settings.
-Mine looks like so:
-
----
-:owner_id: 7777889599999
-:access_key_id: AF4616CSG78CGSBQF122
-:secret_access_key: x8hA/tc63Y2gyvoanIHxicBKpeHWNW921y7Uhrdm
-:cert: |
-  -----BEGIN CERTIFICATE-----
-  ...snip...
-  -----END CERTIFICATE-----
-
-:key: |
-  -----BEGIN PRIVATE KEY-----
-  ...snip...
-  -----END PRIVATE KEY-----
+* - Look in the example dir and copy env.yml to the base dir with correct
+  attributes.
 
 * - Fire away! - This may take a couple hours as 100% of the OS is
 compiled for the CPU and Architecture of the image type:
@@ -72,3 +58,27 @@ tail -f nohup.out
 
 * - If all goes well you should have a nice fresh image for yourself
 in a bucket all registered and ready to launch.
+
+# start a master server
+rake -t rake run[us-east-1c,c1.medium,ami-XXXXYYY,lolcatz,lolcatz]
+ssh -i ~/.ssh/lolcatz.pem root@ec2-67-210-31-157.compute-1.amazonaws.com
+mv /etc/puppet /etc/puppet.orig
+git clone git://github.com/dysinger/gec2.git /etc/puppet
+cp /etc/puppet.orig/*.conf /etc/puppet && rm -rf /etc/puppet.orig
+
+# now setup your cluster module and users and your node declarations
+# like the example.
+
+# start some puppets (node names match yoru nodes on the master)
+rake -t rake run[us-east-1c,c1.medium,ami-XXXXYYY,lolcatz,curious]
+rake -t rake run[us-east-1c,c1.medium,ami-XXXXYYY,lolcatz,puffball
+
+HINT: As you are working with puppet. Log into the master server and run 
+puppet and puppet master in debug mode.
+
+# puppetmaster
+puppetmaster --no-daemonize -v -d
+
+# puppet
+puppet $PUPPET_EXTRA_OPTS --test -v -d
+
