@@ -69,7 +69,7 @@ cp /etc/puppet.orig/*.conf /etc/puppet && rm -rf /etc/puppet.orig
 # now setup your cluster module and users and your node declarations
 # like the example.
 
-# start some puppets (node names match yoru nodes on the master)
+# start some puppets (node names match your nodes on the master)
 rake -t run[us-east-1c,c1.medium,ami-XXXXYYY,lolcatz,curious]
 rake -t run[us-east-1c,c1.medium,ami-XXXXYYY,lolcatz,puffball]
 
