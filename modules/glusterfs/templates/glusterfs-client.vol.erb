@@ -1,0 +1,65 @@
+### file: client-volume.spec.sample
+
+##############################################
+###  GlusterFS Client Volume Specification  ##
+##############################################
+
+#### CONFIG FILE RULES:
+### "#" is comment character.
+### - Config file is case sensitive
+### - Options within a volume block can be in any order.
+### - Spaces or tabs are used as delimitter within a line.
+### - Each option should end within a line.
+### - Missing or commented fields will assume default values.
+### - Blank/commented lines are allowed.
+### - Sub-volumes should already be defined above before referring.
+
+### Add client feature and attach to remote subvolume
+volume client
+  type protocol/client
+  option transport-type tcp/client     # for TCP/IP transport
+# option ib-verbs-work-request-send-size  1048576
+# option ib-verbs-work-request-send-count 16
+# option ib-verbs-work-request-recv-size  1048576
+# option ib-verbs-work-request-recv-count 16
+# option transport-type ib-sdp/client  # for Infiniband transport
+# option transport-type ib-verbs/client # for ib-verbs transport
+### vvv ###
+  option remote-host <%= server %>
+### ^^^ ###
+# option remote-port 6996              # default server port is 6996
+
+# option transport-timeout 30          # seconds to wait for a reply
+                                       # from server for each request
+  option remote-subvolume brick        # name of the remote volume
+end-volume
+
+### Add io-threads feature
+#volume iot
+#  type performance/io-threads
+#  subvolumes client
+#end-volume
+
+### Add readahead feature
+#volume readahead
+#  type performance/read-ahead
+#  option page-size 1MB     # unit in bytes
+#  option page-count 2       # cache per file  = (page-count x page-size)
+#  subvolumes iot
+#end-volume
+
+### Add IO-Cache feature
+#volume iocache
+#  type performance/io-cache
+#  option page-size 256KB
+#  option page-count 2
+#  subvolumes readahead
+#end-volume
+
+### Add writeback feature
+#volume writeback
+#  type performance/write-behind
+#  option aggregate-size 1MB
+#  option flush-behind off
+#  subvolumes iocache
+#end-volume
