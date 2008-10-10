@@ -1,21 +1,18 @@
 #!/bin/bash
 
-if [ ! -f /boot/.1st ]; then
-  `/usr/local/sbin/hosts \
-    -a '<%= access_key_id %>' -s '<%= secret_access_key %>' >/etc/hosts`
+if [ ! -f /etc/env.d/69puppet ]; then
+    `/usr/local/sbin/hosts \
+        -a '<%= access_key_id %>' -s '<%= secret_access_key %>' >/etc/hosts`
 
     echo 'HOSTNAME="<%= hostname %>"' >/etc/conf.d/hostname
     rc-update add hostname default
     /etc/init.d/hostname restart
 
-<% unless master.nil? %>
     echo 'PUPPET_EXTRA_OPTS="--server <%= master %>.ec2"' \
       >/etc/env.d/69puppet
     env-update
     source /etc/profile
-<% end %>
+
     rc-update add puppet default
     /etc/init.d/puppet restart
-
-    touch /boot/.1st
 fi
