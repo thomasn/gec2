@@ -23,10 +23,10 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 This project is a hybrid EC2, Puppet & Portage management tool for
 Gentoo Linux images.  With it you can build a Gentoo EC2 image from
-scratch, bundle it up and send it to Amazon, start it, stop it and
-terminate it.  All software management from the image stage to the
-running instance (ongoing) is managed by Puppet.  Additionally there
-is a portage overlay for packages helpful to running servers at ec2.
+scratch, bundle it, upload it to Amazon and fire it up.  All 
+software management from the image stage to the running instance 
+(ongoing) is managed by Puppet.  Additionally there is a portage 
+overlay for packages helpful to running servers at ec2.
 
 * - Fire up a pre-existing 2.6.18-compatible image - these are ok:
      m1.small, c1.medium            -> ami-d8a347b1 w/ aki-9b00e5f2
