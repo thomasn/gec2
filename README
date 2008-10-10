@@ -71,7 +71,7 @@ cp /etc/puppet.orig/*.conf /etc/puppet && rm -rf /etc/puppet.orig
 
 # start some puppets (node names match yoru nodes on the master)
 rake -t rake run[us-east-1c,c1.medium,ami-XXXXYYY,lolcatz,curious]
-rake -t rake run[us-east-1c,c1.medium,ami-XXXXYYY,lolcatz,puffball
+rake -t rake run[us-east-1c,c1.medium,ami-XXXXYYY,lolcatz,puffball]
 
 HINT: As you are working with puppet. Log into the master server and run 
 puppet and puppet master in debug mode.
@@ -80,5 +80,5 @@ puppet and puppet master in debug mode.
 puppetmaster --no-daemonize -v -d
 
 # puppet
-puppet $PUPPET_EXTRA_OPTS --test -v -d
+puppet $PUPPET_EXTRA_OPTS --test -d
 
