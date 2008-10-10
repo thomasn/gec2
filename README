@@ -60,7 +60,7 @@ tail -f nohup.out
 in a bucket all registered and ready to launch.
 
 # start a master server
-rake -t rake run[us-east-1c,c1.medium,ami-XXXXYYY,lolcatz,lolcatz]
+rake -t run[us-east-1c,c1.medium,ami-XXXXYYY,lolcatz,lolcatz]
 ssh -i ~/.ssh/lolcatz.pem root@ec2-67-210-31-157.compute-1.amazonaws.com
 mv /etc/puppet /etc/puppet.orig
 git clone git://github.com/dysinger/gec2.git /etc/puppet
@@ -70,8 +70,8 @@ cp /etc/puppet.orig/*.conf /etc/puppet && rm -rf /etc/puppet.orig
 # like the example.
 
 # start some puppets (node names match yoru nodes on the master)
-rake -t rake run[us-east-1c,c1.medium,ami-XXXXYYY,lolcatz,curious]
-rake -t rake run[us-east-1c,c1.medium,ami-XXXXYYY,lolcatz,puffball]
+rake -t run[us-east-1c,c1.medium,ami-XXXXYYY,lolcatz,curious]
+rake -t run[us-east-1c,c1.medium,ami-XXXXYYY,lolcatz,puffball]
 
 HINT: As you are working with puppet. Log into the master server and run 
 puppet and puppet master in debug mode.
