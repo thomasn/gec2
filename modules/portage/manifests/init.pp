@@ -18,6 +18,22 @@ class portage {
     require => Package["eix"]
   }
 
+  define overlay($category, $source) {
+    exec { "portage-overlay-$category-$name":
+      command => "/bin/mkdir -p /usr/local/portage/$category",
+      creates => "/usr/local/portage/$category",
+      before => File["/usr/local/portage/$category/$name"]
+    }
+    file { "/usr/local/portage/$category/$name":
+      source => "puppet:///$source/$name", recurse => true
+    }
+    exec { "update-eix-$name":
+      command => "/usr/bin/update-eix",
+      subscribe => File["/usr/local/portage/$category/$name"],
+      refreshonly => true
+    }
+  }
+
   define keywords($category, $keywords="") {
     exec { "$name-keywords":
       command => "/usr/bin/perl -p -i -e 's/^.*$category.$name.*//g' \

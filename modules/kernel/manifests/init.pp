@@ -1,18 +1,10 @@
 class kernel {
-  file { "/usr/local/portage/sys-kernel": ensure => directory }
-  file { "/usr/local/portage/sys-kernel/ec2-sources":
-    source => "puppet:///kernel/ec2-sources",
-    recurse => true,
-    before => Portage::Keywords["ec2-sources"],
-    require => File["/usr/local/portage/sys-kernel"]
+  portage::overlay { "ec2-sources":
+    category => "sys-kernel", source => "kernel"
   }
-  exec { "update-eix-kernel":
-    command => "/usr/bin/update-eix",
-    refreshonly => true,
-    subscribe => File["/usr/local/portage/sys-kernel/ec2-sources"],
-    before => Portage::Keywords["ec2-sources"]
+  portage::keywords { "ec2-sources":
+    category => "sys-kernel", require => Portage::Overlay["ec2-sources"]
   }
-  portage::keywords { "ec2-sources": category => "sys-kernel" }
   portage::use { "ec2-sources": category => "sys-kernel", use => "symlink" }
   package { "ec2-sources":
     category => "sys-kernel", before => Exec["ec2-sources-conf"]
