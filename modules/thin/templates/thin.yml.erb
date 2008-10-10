@@ -1,0 +1,10 @@
+---
+environment: <%= env %>
+servers: <%= servers %>
+user: nobody
+group: nobody
+chdir: /var/www/<%= name %>/current
+pid: tmp/pids/test
+port: <%= port %>
+address: 0.0.0.0
+log: log/thin.log
