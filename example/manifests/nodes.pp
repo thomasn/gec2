@@ -10,7 +10,7 @@ node mycluster inherits default {
 
 node "curly.ec2" inherits mycluster {
   mycluster::website { "website": env => "production" }
-  mycluster::share_client { "data": server => "kauai" }
+  mycluster::share_client { "data": server => "larry" }
 }
 
 node "larry.ec2" inherits mycluster {
