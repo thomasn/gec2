@@ -1,4 +1,8 @@
 class mysql {
+  portage::use { "mysql":
+    category => "dev-db",
+    use => "big-tables"
+  }
   package { "mysql":
     category => "dev-db",
     before => File["/etc/mysql/my.cnf"]
