@@ -121,12 +121,15 @@ file_create('/mnt/gentoo/tmp/cert.pem' => '/mnt/gentoo/etc') do
   end
 end
 
+directory('/mnt/gentoo/usr/local/portage')
+
 task(:bootstrap => '.bootstrap.')
 file_create('.bootstrap.' => ['/mnt/gentoo/etc/resolv.conf',
                               '/mnt/gentoo/etc/make.conf',
                               '/mnt/gentoo/etc/portage/package.keywords',
                               '/mnt/gentoo/etc/portage/package.unmask',
                               '/mnt/gentoo/etc/portage/package.use',
+                              '/mnt/gentoo/usr/local/portage',
                               '/mnt/gentoo/proc/cpuinfo',
                               '/mnt/gentoo/dev/random']) do
   chroot('groupmems -p -g users',
@@ -142,9 +145,9 @@ file_create('.bootstrap.' => ['/mnt/gentoo/etc/resolv.conf',
          'emerge -k gentoolkit',
          'revdep-rebuild',
          'emerge --depclean',
-         'eclean packages',
-         'eclean distfiles',
-         'emerge -k postfix vixie-cron rubygems',
+         'emerge -k postfix',
+         'emerge -k vixie-cron',
+         'emerge -k ruby rubygems',
          'emerge -k puppet')
   touch('.bootstrap.')
 end
