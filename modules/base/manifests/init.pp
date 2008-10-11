@@ -2,7 +2,7 @@ class base {
   include portage, ruby, puppet
   include kernel, aws
   include ddclient, ntp, ssh
-  include ssmtp, cron, syslog, sudo, git
+  include postfix, cron, syslog, sudo, git
   include autofs, fuse, s3fs
 
   file { "/etc/motd": source => "puppet:///base/motd" }
