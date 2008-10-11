@@ -56,6 +56,7 @@ end
 file_create('/mnt/gentoo/etc' => ['/mnt/gentoo',
                                   '/tmp/stage3-2008.0.tar.bz2']) do
   sh('tar -vxjf /tmp/stage3-2008.0.tar.bz2 -C /mnt/gentoo')
+  rm('/mnt/gentoo/etc/make.conf')
 end
 
 file_create('/mnt/gentoo/etc/resolv.conf' => '/mnt/gentoo/etc') do
@@ -89,6 +90,13 @@ file_create('/mnt/gentoo/etc/portage/package.unmask' =>
   end
 end
 
+file_create('/mnt/gentoo/etc/portage/package.use' =>
+            '/mnt/gentoo/etc/portage') do
+  File.open('/mnt/gentoo/etc/portage/package.use', 'w') do |f|
+    f.write("mail-mta/postfix sasl\n")
+  end
+end
+
 file_create('/mnt/gentoo/proc/cpuinfo' => '/mnt/gentoo/etc') do
   sh('mount -t proc none /mnt/gentoo/proc')
 end
@@ -118,6 +126,7 @@ file_create('.bootstrap.' => ['/mnt/gentoo/etc/resolv.conf',
                               '/mnt/gentoo/etc/make.conf',
                               '/mnt/gentoo/etc/portage/package.keywords',
                               '/mnt/gentoo/etc/portage/package.unmask',
+                              '/mnt/gentoo/etc/portage/package.use',
                               '/mnt/gentoo/proc/cpuinfo',
                               '/mnt/gentoo/dev/random']) do
   chroot('groupmems -p -g users',
@@ -135,7 +144,7 @@ file_create('.bootstrap.' => ['/mnt/gentoo/etc/resolv.conf',
          'emerge --depclean',
          'eclean packages',
          'eclean distfiles',
-         'emerge -k vixie-cron rubygems',
+         'emerge -k postfix vixie-cron rubygems',
          'emerge -k puppet')
   touch('.bootstrap.')
 end
@@ -195,7 +204,7 @@ end
 ######################################################################
 
 desc("gimme access on ssh")
-task(:ingress => :env) do |t, args|
+task(:ingress => :env) do
   # create an ssh ingress for my ip
   cidr = Hpricot(open('http://checkip.dyndns.com').read).at('body').
     inner_text.gsub('Current IP Address: ', '') << '/32'
