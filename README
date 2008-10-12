@@ -1,84 +1,89 @@
 GEC2: Gentoo EC2, Puppet and Portage Tools
 
-Copyright (c) 2008 Tim Dysinger
-
-Permission is hereby granted, free of charge, to any person obtaining
-a copy of this software and associated documentation files (the
-"Software"), to deal in the Software without restriction, including
-without limitation the rights to use, copy, modify, merge, publish,
-distribute, sublicense, and/or sell copies of the Software, and to
-permit persons to whom the Software is furnished to do so, subject to
-the following conditions:
-
-The above copyright notice and this permission notice shall be
-included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+Copyright 2008 Tim Dysinger
+http://www.opensource.org/licenses/mit-license.php
 
 This project is a hybrid EC2, Puppet & Portage management tool for
 Gentoo Linux images.  With it you can build a Gentoo EC2 image from
-scratch, bundle it, upload it to Amazon and fire it up.  All 
-software management from the image stage to the running instance 
-(ongoing) is managed by Puppet.  Additionally there is a portage 
+scratch, bundle it, upload it to Amazon and fire it up.  All
+software management from the image stage to the running instance
+(ongoing) is managed by Puppet.  Additionally there is a portage
 overlay for packages helpful to running servers at ec2.
 
-* - Fire up a pre-existing 2.6.18-compatible image - these are ok:
-     m1.small, c1.medium            -> ami-d8a347b1 w/ aki-9b00e5f2
-     m1.large, m1.xlarge, c1.xlarge -> ami-c8ac48a1 w/ aki-9800e5f1
+Even if you just want to use gentoo and don't want to bother with
+puppet, this project can be of use to you.  The base images are nothing
+more than gentoo base system, dhcp, ddclient, openntp, syslog,
+vixie-cron, postfix, java, ruby & rubygems, puppet and amazon api/ami
+tools.  This is pretty small and (besides puppet) is the base minimum
+to run an ec2 instance & exercise the api/ami tools.
 
-* - Setup up ruby, rubygems & git on the server instance.
+If you don't feel like messing around with creating images for ec2
+from scratch (or just want to mess around with good solid
+ec2-optimized gentoo image), then just use one of the following public
+images I created (they were created using this same process and are the
+end product):
 
-yum update -y
-yum install ruby-devel rubygems git-core -y
-rm -f ~/.gemrc
-gem update --system
-gem update
-gem install rake amazon-ec2 aws-s3 hpricot facter --no-rdoc --no-ri
-gem clean
+ami-d22cc8bb m1.small  32-bit 1-core "athlon-xp" optimized
+ami-c02cc8a9 m1.large  64-bit 2-core "opteron"   optimized
+ami-c12cc8a8 m1.xlarge 64-bit 4-core "opteron"   optimized
+ami-5d2dc934 c1.medium 32-bit 2-core "prescott"  optimized
+ami-332cc85a c1.xlarge 64-bit 8-core "nocona"    optimized
 
-* - Clone this project to your server
+If you would like to dig in or customize your image follow the following:
 
-git clone git://github.com/dysinger/gec2.git
-cd gec2
+Fire up a pre-existing 2.6.18-compatible image - these are ok:
+  m1.small, c1.medium            -> ami-d8a347b1 w/ aki-9b00e5f2
+  m1.large, m1.xlarge, c1.xlarge -> ami-c8ac48a1 w/ aki-9800e5f1
 
-* - Look in the example dir and copy env.yml to the base dir with correct
-  attributes.
+Rsync this project to your build server and login
+$ rsync -r -u root@myec2buildserver:~/gec2
+$ ssh myec2buildserver
+$ cd gec2
 
-* - Fire away! - This may take a couple hours as 100% of the OS is
-compiled for the CPU and Architecture of the image type:
+Update ruby & gems on your build server.
+$ yum update -y
+$ yum install ruby-devel rubygems git-core -y
+$ rm -f ~/.gemrc
+$ gem update --system
+$ gem update
+$ gem install rake amazon-ec2 aws-s3 hpricot facter --no-rdoc --no-ri
+$ gem clean
 
-nohup rake -t image &
+Look in the example dir and copy env.yml to the base dir with your
+correct aws account attributes. Then run rake to assemble the base
+gentoo image.
+
+nohup rake -t image:configure &
 tail -f nohup.out
 
-* - If all goes well you should have a nice fresh image for yourself
-in a bucket all registered and ready to launch.
+This may take a couple hours as 100% of the OS is compiled for the CPU
+and Architecture of the image type. If all goes well you'll have a
+fully created chroot gentoo image. I say "If all goes well" becase
+gentoo is very hands on as things change in the portage tree.
 
-# start a master server
-rake -t run[us-east-1c,c1.medium,ami-XXXXYYY,lolcatz,lolcatz]
-ssh -i ~/.ssh/lolcatz.pem root@ec2-67-210-31-157.compute-1.amazonaws.com
-mv /etc/puppet /etc/puppet.orig
-git clone git://github.com/dysinger/gec2.git /etc/puppet
-cp /etc/puppet.orig/*.conf /etc/puppet && rm -rf /etc/puppet.orig
+You then need to bundle it for ec2, upload and register it.
 
-# now setup your cluster module and users and your node declarations
-# like the example.
+$ rake -t image:upload
 
-# start some puppets (node names match your nodes on the master)
-rake -t run[us-east-1c,c1.medium,ami-XXXXYYY,lolcatz,curious]
-rake -t run[us-east-1c,c1.medium,ami-XXXXYYY,lolcatz,puffball]
+If all goes well you should have a nice fresh image for yourself in a
+bucket all registered and ready to launch.
 
-HINT: As you are working with puppet. Log into the master server and run 
+Now start a puppet master server
+
+$ rake -t run[us-east-1c,c1.medium,ami-XXXXYYY,lolcatz,lolcatz]
+
+Now setup your cluster module and users and your node declarations
+like the example.  Then sync up your puppet master manifests & modules
+
+$ ssh-add ~/.ssh/lolcatz.pem
+$ rsync -r -u root@mynewamazanpupetmasterserver.com:/etc/puppet
+
+Start some puppets (node names must match your nodes on the nodes.pp manifest)
+$ rake -t instance:run[us-east-1c,c1.medium,ami-XXXXYYY,lolcatz,curious]
+$ rake -t instance:run[us-east-1c,c1.medium,ami-XXXXYYY,lolcatz,puffball]
+
+HINT: As you are working with puppet. Log into the master server and run
 puppet and puppet master in debug mode.
 
-# puppetmaster
-puppetmaster --no-daemonize -v -d
-
-# puppet
-puppet $PUPPET_EXTRA_OPTS --test -d
-
+$ puppetmaster --no-daemonize -v -d ; # on puppetmaster
+$ puppet $PUPPET_EXTRA_OPTS --test -d ; # on puppets
