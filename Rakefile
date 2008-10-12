@@ -6,6 +6,8 @@
 class OpenStruct
   public(:binding)
   def binding ; super end
+  def merge(other) ; OpenStruct.new(@table.merge(other.to_hash)) end
+  def merge!(other) ; @table.merge!(other.to_hash) ; self end
   def to_hash ; @table.dup end
 end
 @env = OpenStruct.new
