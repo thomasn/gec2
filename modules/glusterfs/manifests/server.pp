@@ -5,9 +5,5 @@ define glusterfs::server {
     before => Service["glusterfs-server"],
     require => Class["glusterfs"]
   }
-  service { "glusterfs-server":
-    enable => true,
-    ensure => running,
-    require => Class["glusterfs"]
-  }
+  service { "glusterfs-server": enable => true, ensure => running }
 }
