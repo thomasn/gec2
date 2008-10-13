@@ -1,7 +1,7 @@
 class mysql {
   portage::use { "mysql":
     category => "dev-db",
-    use => "big-tables"
+    use => "-berkdb"
   }
   package { "mysql":
     category => "dev-db",
