@@ -18,7 +18,7 @@ tools.  This is pretty small and (besides puppet) is the base minimum
 to run an ec2 instance & exercise the api/ami tools.
 
 If you don't feel like messing around with creating images for ec2
-from scratch (or just want to mess around with good solid
+from scratch (or just want to mess around with a good solid
 ec2-optimized gentoo image), then just use one of the following public
 images I created (they were created using this same process and are the
 end product):
@@ -29,7 +29,7 @@ ami-c12cc8a8 m1.xlarge 64-bit 4-core "opteron"   optimized
 ami-5d2dc934 c1.medium 32-bit 2-core "prescott"  optimized
 ami-332cc85a c1.xlarge 64-bit 8-core "nocona"    optimized
 
-If you would like to dig in or customize your image follow the following:
+If you would like to dig in or customize your image do the following:
 
 Fire up a pre-existing 2.6.18-compatible image - these are ok:
   m1.small, c1.medium            -> ami-d8a347b1 w/ aki-9b00e5f2
@@ -66,7 +66,8 @@ You then need to bundle it for ec2, upload and register it.
 $ rake -t image:upload
 
 If all goes well you should have a nice fresh image for yourself in a
-bucket all registered and ready to launch.
+bucket all registered and ready to launch. I say "If all goes well"
+because sometimes the upload process to s3 fails.  Just try it again.
 
 Now start a puppet master server
 
@@ -76,7 +77,7 @@ Now setup your cluster module and users and your node declarations
 like the example.  Then sync up your puppet master manifests & modules
 
 $ ssh-add ~/.ssh/lolcatz.pem
-$ rsync -r -u root@mynewamazanpupetmasterserver.com:/etc/puppet
+$ rsync -r -u root@my.amazon.lolcatz.master.server.com:/etc/puppet
 
 Start some puppets (node names must match your nodes on the nodes.pp manifest)
 $ rake -t instance:run[us-east-1c,c1.medium,ami-XXXXYYY,lolcatz,curious]
