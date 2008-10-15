@@ -18,10 +18,10 @@ tools.  This is pretty small and (besides puppet) is the base minimum
 to run an ec2 instance & exercise the api/ami tools.
 
 If you don't feel like messing around with creating images for ec2
-from scratch (or just want to mess around with a good solid
-ec2-optimized gentoo image), then just use one of the following public
-images I created (they were created using this same process and are the
-end product):
+from scratch (or just want to mess around with a good solid ec2
+optimized gentoo image), then just use one of the following public
+images I created (they were created using this same process and are
+the end product):
 
 ami-d22cc8bb m1.small  32-bit 1-core "athlon-xp" optimized
 ami-c02cc8a9 m1.large  64-bit 2-core "opteron"   optimized
@@ -29,11 +29,13 @@ ami-c12cc8a8 m1.xlarge 64-bit 4-core "opteron"   optimized
 ami-5d2dc934 c1.medium 32-bit 2-core "prescott"  optimized
 ami-332cc85a c1.xlarge 64-bit 8-core "nocona"    optimized
 
-If you would like to dig in or customize your image do the following:
+=========================================================================
+If you would like to dig in or customize your image follow the following:
+=========================================================================
 
-Fire up a pre-existing 2.6.18-compatible image - these are ok:
-  m1.small, c1.medium            -> ami-d8a347b1 w/ aki-9b00e5f2
-  m1.large, m1.xlarge, c1.xlarge -> ami-c8ac48a1 w/ aki-9800e5f1
+Now that we have some dog food to eat, you can just fire up one of the
+gentoo public images above.  Use the proper image that matches the
+instance type you are targeting.
 
 Rsync this project to your build server and login
 $ rsync -r -u root@myec2buildserver:~/gec2
@@ -41,10 +43,6 @@ $ ssh myec2buildserver
 $ cd gec2
 
 Update ruby & gems on your build server.
-$ yum update -y
-$ yum install ruby-devel rubygems git-core -y
-$ rm -f ~/.gemrc
-$ gem update --system
 $ gem update
 $ gem install rake amazon-ec2 aws-s3 hpricot facter --no-rdoc --no-ri
 $ gem clean
@@ -53,8 +51,7 @@ Look in the example dir and copy env.yml to the base dir with your
 correct aws account attributes. Then run rake to assemble the base
 gentoo image.
 
-nohup rake -t image:configure &
-tail -f nohup.out
+$ rake -t image:configure ;# or nohup it so you can logout if you want
 
 This may take a couple hours as 100% of the OS is compiled for the CPU
 and Architecture of the image type. If all goes well you'll have a
