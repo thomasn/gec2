@@ -5,8 +5,11 @@ upstream thin {
 }
 
 server {
-    server_name .<%= name %>
     listen 80;
+    rewrite ^(.*) https://$http_host$1 permanent;
+}
+
+server {
     listen 443;
     ssl on;
     ssl_certificate /etc/ssl/<%= name %>/crt.pem;
