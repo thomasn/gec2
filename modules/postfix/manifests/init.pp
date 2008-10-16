@@ -4,7 +4,12 @@ class postfix {
   exec { "postfix-reload":
     command => "/usr/sbin/postfix reload", refreshonly => true
   }
-  exec { "postmap-virt":
+  exec { "postfix-aliases":
+    command => "/usr/bin/newaliases",
+    refreshonly => true,
+    notify => Exec["postfix-reload"]
+  }
+  exec { "postmap-virtual":
     command => "/usr/sbin/postmap /etc/postfix/virtual",
     refreshonly => true,
     notify => Exec["postfix-reload"]
